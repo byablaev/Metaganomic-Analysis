@@ -1,0 +1,12 @@
+.git
+.gitignore
+.dockerignore
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.env
+data/
+*.bat
+*.sh
+README.md
