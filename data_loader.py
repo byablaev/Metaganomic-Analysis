@@ -68,9 +68,9 @@ class DataLoader:
         self.orientation_detected = orientation
         if orientation == 'samples_as_columns':
             self.otu_table = self.otu_table.T
-            st.info("🔄 Auto-detected: OTU table transposed (samples were columns → now rows)")
+            st.info("Auto-detected: OTU table transposed (samples were columns, now rows)")
         else:
-            st.info("✅ Auto-detected: OTU table in standard orientation (samples as rows)")
+            st.info("Auto-detected: OTU table in standard orientation (samples as rows)")
 
         if (self.fingerprint.detected_taxonomy_map
                 and self.fingerprint.taxonomy_format != 'unknown'):
@@ -120,13 +120,13 @@ class DataLoader:
                 common = set(self.otu_table.index) & set(self.metadata.index)
 
         if not common:
-            st.error(f"❌ No matching sample IDs.\n"
+            st.error(f"No matching sample IDs.\n"
                      f"OTU samples: {list(otu_s)[:5]}\n"
                      f"Metadata samples: {list(meta_s)[:5]}")
             return False
 
         if len(common) < len(meta_s) * 0.5:
-            st.warning(f"⚠ Only {len(common)}/{len(meta_s)} samples matched.")
+            st.warning(f"Only {len(common)}/{len(meta_s)} samples matched.")
 
         common_list = sorted(common)
         self.otu_table = self.otu_table.loc[common_list]

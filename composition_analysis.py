@@ -540,6 +540,467 @@ class CompositionAnalyzer:
                 })
             return pd.DataFrame(rows)
 
+    def create_full_taxonomy_table(self):
+        """Full taxonomy table (QIIME2-style): Feature ID + all levels + lineage + abundance stats."""
+        tax = self.data_loader.taxonomy
+        otu = self.data_loader.get_filtered_otu_table(self.settings.get('auto_filter_zeros', True))
+        if tax is None or tax.empty or otu is None or otu.empty:
+            return pd.DataFrame()
+
+        standard_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species']
+        prefix_map = {'Kingdom': 'k__', 'Phylum': 'p__', 'Class': 'c__',
+                      'Order': 'o__', 'Family': 'f__', 'Genus': 'g__', 'Species': 's__'}
+        available_levels = [l for l in standard_levels if l in tax.columns and tax[l].notna().sum() > 0]
+        if not available_levels:
+            return pd.DataFrame()
+
+        tax_sub = tax[available_levels].copy()
+
+        def make_lineage(row):
+            parts = []
+            for lvl in available_levels:
+                val = row[lvl]
+                p = prefix_map.get(lvl, '')
+                if pd.notna(val) and str(val).strip() not in ('', 'nan', 'Unclassified', 'unclassified'):
+                    parts.append(f"{p}{val}")
+                else:
+                    parts.append(f"{p}__")
+            return '; '.join(parts)
+
+        tax_sub['Full Lineage'] = tax_sub.apply(make_lineage, axis=1)
+
+        # OTU table: rows=samples, cols=OTUs → transpose to rows=OTUs
+        otu_t = otu.T
+        common = otu_t.index.intersection(tax_sub.index)
+        if len(common) == 0:
+            return pd.DataFrame()
+        otu_sub = otu_t.loc[common]
+
+        # Per-sample totals for relative abundance
+        sample_totals = otu.sum(axis=1)
+        rel = otu_sub.div(sample_totals, axis=1) * 100
+        rel = rel.fillna(0)
+
+        result = tax_sub.loc[common].copy()
+        result.index.name = 'Feature ID'
+        result['Mean Abundance (%)'] = rel.mean(axis=1).round(4)
+        result['Max Abundance (%)']  = rel.max(axis=1).round(4)
+        result['Prevalence (%)']     = ((rel > 0).sum(axis=1) / rel.shape[1] * 100).round(1)
+        result['Total Reads']        = otu_sub.sum(axis=1).astype(int)
+
+        result = result.sort_values('Mean Abundance (%)', ascending=False).reset_index()
+        cols = (['Feature ID'] + available_levels +
+                ['Full Lineage', 'Mean Abundance (%)', 'Max Abundance (%)',
+                 'Prevalence (%)', 'Total Reads'])
+        return result[[c for c in cols if c in result.columns]]
+
+    def _compute_level_rel(self, level, otu, otu_t, sample_cols):
+        """Compute relative abundance DataFrame for one taxonomic level."""
+        tax = self.data_loader.taxonomy
+        if level not in tax.columns or tax[level].notna().sum() == 0:
+            return None
+        merged = otu_t.merge(tax[[level]], left_index=True, right_index=True)
+        merged[level] = merged[level].fillna('Unclassified')
+        level_ab = merged.groupby(level)[sample_cols].sum()
+        totals = level_ab.sum(axis=0)
+        rel = level_ab.div(totals, axis=1) * 100
+        rel = rel.fillna(0)
+        rel = rel[rel.sum(axis=1) > 0]
+        return rel
+
+    def generate_taxonomy_html_report(self, min_abundance=0.0):
+        """
+        Self-contained HTML taxa summary.
+        One Plotly chart per taxonomic level, rendered by plotly.io.to_html().
+        Tab buttons show/hide level divs — no custom Plotly JS API calls.
+        Works fully offline (plotly.min.js embedded inline).
+        """
+        import plotly.io as pio
+        import plotly.graph_objects as go
+        import json, datetime, os
+
+        # ── Inline Plotly.js (self-contained, offline) ──────────────────────
+        try:
+            import plotly as _px
+            _js_path = os.path.join(os.path.dirname(_px.__file__),
+                                    'package_data', 'plotly.min.js')
+            with open(_js_path, 'r', encoding='utf-8') as _f:
+                _plotly_tag = '<script>' + _f.read() + '</script>'
+        except Exception:
+            _plotly_tag = ('<script src="https://cdn.plot.ly/'
+                           'plotly-2.27.0.min.js"></script>')
+
+        auto_filter = self.settings.get('auto_filter_zeros', True)
+        otu    = self.data_loader.get_filtered_otu_table(auto_filter)
+        gc     = self.settings.get('group_column')
+        levels = self.data_loader.get_taxonomic_levels()
+
+        if otu is None or otu.empty or not levels:
+            return '<p>No data available.</p>'
+
+        sample_cols = list(otu.index)
+        otu_t       = otu.T
+
+        level_rel = {}
+        for level in levels:
+            rel = self._compute_level_rel(level, otu, otu_t, sample_cols)
+            if rel is not None and not rel.empty:
+                level_rel[level] = rel
+
+        if not level_rel:
+            return '<p>Could not compute relative abundance.</p>'
+
+        # ── Build one Plotly figure per level ────────────────────────────────
+        level_ru = {
+            'Kingdom': 'царства', 'Phylum': 'типа', 'Class': 'класса',
+            'Order': 'порядка', 'Family': 'семейства',
+            'Genus': 'рода', 'Species': 'вида',
+        }
+        n_samples  = len(sample_cols)
+        n_features = len(otu.columns)
+        now        = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        group_info = self.settings.get('group_column') or 'none'
+        min_ab_str = (f'>= {min_abundance:.2f}%' if min_abundance > 0
+                      else 'all taxa included')
+
+        ldata      = {}   # compact JSON for TSV download
+        tabs_html  = ''
+        sections   = []
+
+        for i, (level, rel) in enumerate(level_rel.items()):
+            mean_ab = rel.mean(axis=1).sort_values(ascending=False)
+            taxa = (mean_ab[mean_ab >= min_abundance].index.tolist()
+                    if min_abundance > 0 else mean_ab.index.tolist())
+            samples = [s for s in sample_cols if s in rel.columns]
+            colors  = self._get_taxa_colors(len(taxa))
+            italic  = level in ('Genus', 'Species')
+
+            # Compact data for TSV
+            ldata[level] = {
+                'taxa': taxa, 'samples': samples,
+                'matrix': {t: rel.loc[t, samples].round(6).tolist() for t in taxa}
+            }
+
+            # Plotly figure — one trace per taxon, reversed so max is at bottom
+            fig = go.Figure()
+            for j, taxon in enumerate(reversed(taxa)):
+                color = colors[len(taxa) - 1 - j]
+                name  = f'<i>{taxon}</i>' if italic else taxon
+                fig.add_trace(go.Bar(
+                    x=samples,
+                    y=rel.loc[taxon, samples].round(4).tolist(),
+                    name=name,
+                    marker_color=color,
+                    marker_line_width=0,
+                    hovertemplate=(
+                        '<b>' + taxon + '</b><br>'
+                        '\u041e\u0431\u0440\u0430\u0437\u0435\u0446: %{x}<br>'
+                        '\u041e\u0442\u043d. \u0447\u0438\u0441\u043b\u0435\u043d\u043d\u043e\u0441\u0442\u044c: %{y:.3f}%'
+                        '<extra></extra>'
+                    ),
+                ))
+
+            ht  = max(500, min(820, len(samples) * 18 + 180))
+            tsz = max(7, 11 - len(samples) // 20)
+            fig.update_layout(
+                barmode='stack',
+                xaxis=dict(
+                    title='\u041e\u0431\u0440\u0430\u0437\u0435\u0446',
+                    tickangle=-55, tickfont=dict(size=tsz, family='Arial'),
+                    showgrid=False, linecolor='#555', linewidth=1,
+                    ticks='outside', ticklen=3,
+                ),
+                yaxis=dict(
+                    title=('\u041e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u0430\u044f '
+                           '\u0447\u0438\u0441\u043b\u0435\u043d\u043d\u043e\u0441\u0442\u044c (%)'),
+                    range=[0, 101], gridcolor='#e8e8e8', gridwidth=0.5,
+                    zeroline=True, zerolinecolor='#555', zerolinewidth=1,
+                    linecolor='#555', linewidth=1, ticks='outside', ticklen=3,
+                ),
+                legend=dict(
+                    title=dict(text=level, font=dict(size=10, color='#222')),
+                    font=dict(size=9, family='Arial'),
+                    bgcolor='rgba(0,0,0,0)', borderwidth=0,
+                    x=1.01, y=1, xanchor='left', yanchor='top',
+                ),
+                height=ht, plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=70, r=240, t=16, b=120),
+                bargap=0.06,
+                font=dict(family='Arial, sans-serif', size=10, color='#222'),
+            )
+
+            chart_div = pio.to_html(
+                fig, full_html=False, include_plotlyjs=False,
+                config={
+                    'displayModeBar': True,
+                    'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+                    'toImageButtonOptions': {
+                        'format': 'svg', 'filename': f'taxa_{level}',
+                        'width': 1400, 'height': ht, 'scale': 2,
+                    },
+                    'responsive': True,
+                },
+            )
+
+            lvru    = level_ru.get(level, level)
+            caption = (f'\u0420\u0438\u0441. \u041e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u0430\u044f '
+                       f'\u0447\u0438\u0441\u043b\u0435\u043d\u043d\u043e\u0441\u0442\u044c \u0432\u0441\u0435\u0445 '
+                       f'{len(taxa)} \u0442\u0430\u043a\u0441\u043e\u043d\u043e\u0432 '
+                       f'\u043d\u0430 \u0443\u0440\u043e\u0432\u043d\u0435 {lvru} '
+                       f'\u0432 {len(samples)} \u043e\u0431\u0440\u0430\u0437\u0446\u0430\u0445.')
+
+            display = 'block' if i == 0 else 'none'
+            sections.append(
+                f'<div class="level-section" id="section-{level}" style="display:{display}">'
+                f'{chart_div}'
+                f'<p class="fig-caption">{caption}</p>'
+                f'<div class="dt-toolbar">'
+                f'  <span class="dt-info">{len(taxa)} taxa &times; {len(samples)} samples</span>'
+                f'  <div class="dt-actions">'
+                f'    <span class="toggle-link" onclick="toggleTbl(\'{level}\')">Show / hide data table</span>'
+                f'    <button class="dl-btn" onclick="dlTSV(\'{level}\')">Download TSV</button>'
+                f'  </div>'
+                f'</div>'
+                f'<div class="dt-outer" id="dto-{level}"><div id="dtc-{level}"></div></div>'
+                f'</div>'
+            )
+
+            active = ' active' if i == 0 else ''
+            tabs_html += (f'<button class="level-tab{active}" id="tab-{level}" '
+                          f'onclick="showLevel(\'{level}\')">'
+                          f'{level}<span class="tab-cnt"> ({len(taxa)})</span></button>')
+
+        sections_html = '\n'.join(sections)
+        ldata_json    = json.dumps(ldata, ensure_ascii=False)
+
+        # ── Feature table (capped at 500 rows) ──────────────────────────────
+        full_tax  = self.create_full_taxonomy_table()
+        _MAX_ROWS = 500
+        if not full_tax.empty:
+            _tot  = len(full_tax)
+            _note = (f'<p class="tbl-note">Top {_MAX_ROWS} of {_tot:,} features '
+                     f'(by mean abundance).</p>' if _tot > _MAX_ROWS else '')
+            ftable_html = _note + full_tax.head(_MAX_ROWS).to_html(
+                index=False, classes='tax-table', border=0,
+                float_format=lambda x: f'{x:.4f}' if isinstance(x, float) else str(x))
+        else:
+            ftable_html = '<p>Feature table not available.</p>'
+
+        meta_rows = (
+            f'<tr><td>Samples</td><td>{n_samples}</td></tr>'
+            f'<tr><td>Features (OTUs/ASVs)</td><td>{n_features:,}</td></tr>'
+            f'<tr><td>Taxonomic levels</td><td>{", ".join(level_rel.keys())}</td></tr>'
+            f'<tr><td>Grouping variable</td><td>{group_info}</td></tr>'
+            f'<tr><td>Abundance filter</td><td>{min_ab_str}</td></tr>'
+            f'<tr><td>Report generated</td><td>{now}</td></tr>'
+            f'<tr><td>Developer</td><td>Ablaev Aziz Yakubovich</td></tr>'
+        )
+
+        # ── Assemble HTML ────────────────────────────────────────────────────
+        html = (
+"<!DOCTYPE html>\n<html lang='ru'>\n<head>\n"
+"<meta charset='UTF-8'>\n"
+"<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
+"<title>Taxa Summary \u2014 BIOMIDAS</title>\n"
++ _plotly_tag + "\n"
++ """<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;font-size:13px;line-height:1.5}
+.page-header{border-bottom:2px solid #111;padding:16px 40px 10px}
+.page-header h1{font-size:15px;font-weight:bold}
+.page-header .sub{font-size:11px;color:#666;margin-top:3px}
+.level-nav{background:#f5f5f5;border-bottom:1px solid #ccc;padding:0 40px;display:flex;flex-wrap:wrap}
+.level-tab{padding:9px 20px;border:none;border-bottom:3px solid transparent;background:none;
+  cursor:pointer;font-size:12px;font-family:Arial,sans-serif;color:#555;font-weight:500}
+.level-tab:hover{color:#111;border-bottom-color:#aaa}
+.level-tab.active{color:#111;border-bottom-color:#111;font-weight:bold}
+.tab-cnt{font-weight:normal;color:#999;font-size:11px}
+.container{max-width:1700px;margin:0 auto;padding:20px 40px 40px}
+.section{margin-bottom:28px}
+.section-title{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
+  color:#111;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:12px}
+.meta-table{border-collapse:collapse;font-size:12px}
+.meta-table td{padding:3px 16px 3px 0;vertical-align:top}
+.meta-table td:first-child{color:#666;white-space:nowrap;min-width:190px}
+.meta-table td:last-child{font-weight:500}
+.fig-caption{font-size:11px;color:#555;font-style:italic;margin-top:6px}
+.dt-toolbar{display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;border-top:1px solid #ccc;padding-top:8px}
+.dt-info{font-size:11px;color:#555}
+.dt-actions{display:flex;gap:10px;align-items:center}
+.toggle-link{font-size:11px;color:#444;cursor:pointer;text-decoration:underline}
+.dl-btn{padding:4px 14px;background:#333;color:#fff;border:none;border-radius:2px;
+  font-size:11px;cursor:pointer;font-family:Arial,sans-serif}
+.dl-btn:hover{background:#111}
+.dt-outer{display:none;overflow:auto;max-height:400px;border:1px solid #ccc;margin-top:6px}
+.raw-table{border-collapse:collapse;font-size:11px;white-space:nowrap}
+.raw-table thead th{position:sticky;top:0;background:#222;color:#fff;
+  padding:6px 10px;text-align:right;font-size:10px;font-weight:bold;z-index:5}
+.raw-table thead th:first-child{text-align:left;min-width:200px;position:sticky;left:0;z-index:10}
+.raw-table tbody td{padding:4px 10px;border-bottom:1px solid #eee;text-align:right}
+.raw-table tbody td:first-child{text-align:left;background:#fff;position:sticky;left:0}
+.raw-table tbody tr:nth-child(even) td{background:#f8f8f8}
+.raw-table tbody tr:nth-child(even) td:first-child{background:#f8f8f8}
+.raw-table tbody tr:hover td{background:#fffde7!important}
+.search-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+.search-box{width:360px;padding:5px 10px;border:1px solid #aaa;border-radius:2px;
+  font-size:12px;font-family:Arial,sans-serif;outline:none}
+.search-box:focus{border-color:#333}
+.row-count{font-size:11px;color:#888}
+.tbl-note{font-size:11px;color:#666;margin-bottom:6px}
+.ftbl-wrapper{overflow:auto;max-height:500px;border:1px solid #ccc}
+.tax-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:800px}
+.tax-table thead th{position:sticky;top:0;z-index:5;background:#222;color:#fff;
+  padding:7px 12px;text-align:left;font-size:11px;font-weight:bold;cursor:pointer;
+  user-select:none;white-space:nowrap}
+.tax-table thead th:hover{background:#444}
+.tax-table tbody tr:nth-child(even) td{background:#f7f7f7}
+.tax-table tbody tr:hover td{background:#fffde7!important}
+.tax-table td{padding:4px 12px;border-bottom:1px solid #e8e8e8;color:#111}
+.tax-table td:first-child{font-family:'Courier New',monospace;font-size:10.5px;color:#666}
+.page-footer{border-top:1px solid #ccc;padding:10px 40px;font-size:10px;color:#999}
+</style>
+</head>
+<body>
+"""
++ f"""<div class="page-header">
+  <h1>Taxa Summary &mdash; Microbiome Analysis</h1>
+  <div class="sub">Generated {now} &bull; BIOMIDAS analysis platform</div>
+</div>
+<div class="level-nav">{tabs_html}</div>
+<div class="container">
+  <div class="section">
+    <div class="section-title">Dataset characteristics</div>
+    <table class="meta-table"><tbody>{meta_rows}</tbody></table>
+  </div>
+  <div class="section">
+    <div class="section-title">Taxonomic bar plots</div>
+    {sections_html}
+  </div>
+  <div class="section">
+    <div class="section-title">Full feature table</div>
+    <div class="search-row">
+      <input type="text" class="search-box" id="tblSearch"
+             placeholder="Search by taxon name or lineage..." oninput="filterTable()">
+      <span class="row-count" id="rowCount"></span>
+    </div>
+    <div class="ftbl-wrapper">{ftable_html}</div>
+  </div>
+</div>
+<div class="page-footer">
+  Taxa Summary &bull; BIOMIDAS &bull; Developer: Ablaev Aziz Yakubovich &bull; {now}
+</div>
+<script>
+var LDATA = {ldata_json};
+
+function showLevel(level) {{
+  var secs = document.querySelectorAll('.level-section');
+  for (var i = 0; i < secs.length; i++) secs[i].style.display = 'none';
+  var tabs = document.querySelectorAll('.level-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  var sec = document.getElementById('section-' + level);
+  if (sec) {{
+    sec.style.display = 'block';
+    // Resize any Plotly chart inside now that it is visible
+    var pd = sec.querySelector('.plotly-graph-div');
+    if (pd && window.Plotly) Plotly.Plots.resize(pd);
+  }}
+  var tab = document.getElementById('tab-' + level);
+  if (tab) tab.classList.add('active');
+}}
+
+function toggleTbl(level) {{
+  var el = document.getElementById('dto-' + level);
+  if (!el) return;
+  if (el.style.display === 'block') {{
+    el.style.display = 'none';
+  }} else {{
+    buildRawTable(level);
+    el.style.display = 'block';
+  }}
+}}
+
+function buildRawTable(level) {{
+  var d = LDATA[level];
+  var h = '<table class="raw-table"><thead><tr><th>Taxon</th>';
+  for (var i = 0; i < d.samples.length; i++) h += '<th>' + d.samples[i] + '</th>';
+  h += '</tr></thead><tbody>';
+  for (var j = 0; j < d.taxa.length; j++) {{
+    var t = d.taxa[j];
+    h += '<tr><td>' + t + '</td>';
+    var vals = d.matrix[t];
+    for (var k = 0; k < vals.length; k++) h += '<td>' + vals[k].toFixed(4) + '</td>';
+    h += '</tr>';
+  }}
+  h += '</tbody></table>';
+  document.getElementById('dtc-' + level).innerHTML = h;
+}}
+
+function dlTSV(level) {{
+  var d = LDATA[level];
+  var tsv = 'Taxon\\t' + d.samples.join('\\t') + '\\n';
+  for (var j = 0; j < d.taxa.length; j++) {{
+    var t = d.taxa[j];
+    tsv += t + '\\t' + d.matrix[t].map(function(v){{return v.toFixed(6);}}).join('\\t') + '\\n';
+  }}
+  var blob = new Blob([tsv], {{type: 'text/tab-separated-values'}});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'taxa_' + level + '.tsv'; a.click();
+  URL.revokeObjectURL(url);
+}}
+
+function filterTable() {{
+  var q  = document.getElementById('tblSearch').value.toLowerCase().trim();
+  var tb = document.querySelector('.tax-table tbody');
+  if (!tb) return;
+  var rows = tb.querySelectorAll('tr'), n = 0;
+  for (var i = 0; i < rows.length; i++) {{
+    var show = !q || rows[i].textContent.toLowerCase().indexOf(q) >= 0;
+    rows[i].style.display = show ? '' : 'none';
+    if (show) n++;
+  }}
+  document.getElementById('rowCount').textContent =
+    q ? n + '\\u00a0/\\u00a0' + rows.length + ' features' : rows.length + ' features';
+}}
+
+window.addEventListener('load', function() {{
+  var tb = document.querySelector('.tax-table tbody');
+  if (tb) document.getElementById('rowCount').textContent =
+    tb.querySelectorAll('tr').length + ' features';
+  // Sort feature table by clicking header
+  var tbl = document.querySelector('.tax-table');
+  if (!tbl) return;
+  var sc = -1, sa = true;
+  var ths = tbl.querySelectorAll('thead th');
+  for (var x = 0; x < ths.length; x++) {{
+    (function(idx) {{
+      ths[idx].addEventListener('click', function() {{
+        sa = sc === idx ? !sa : true; sc = idx;
+        var rows = Array.from(tbl.querySelector('tbody').querySelectorAll('tr'));
+        rows.sort(function(a, b) {{
+          var av = (a.cells[idx] ? a.cells[idx].textContent.trim() : '');
+          var bv = (b.cells[idx] ? b.cells[idx].textContent.trim() : '');
+          var an = parseFloat(av), bn = parseFloat(bv);
+          if (!isNaN(an) && !isNaN(bn)) return sa ? an-bn : bn-an;
+          return sa ? av.localeCompare(bv) : bv.localeCompare(av);
+        }});
+        var tbody = tbl.querySelector('tbody');
+        rows.forEach(function(r) {{ tbody.appendChild(r); }});
+        for (var h2 = 0; h2 < ths.length; h2++) {{
+          ths[h2].textContent = ths[h2].textContent.replace(/ [\u2191\u2193]$/, '');
+        }}
+        ths[idx].textContent += sa ? ' \u2191' : ' \u2193';
+      }});
+    }})(x);
+  }}
+}});
+</script>
+</body>
+</html>"""
+        )
+        return html
+
     def create_group_comparison_plot(self, top_n=20, exclude_taxa=None, font_scale=1.0):
         tax_level = self.settings['taxonomic_level']
         if tax_level not in self.taxonomy_results:

@@ -567,8 +567,19 @@ class MicrobiomeMLAnalyzer:
 
     def _split(self, test_size: float = 0.2):
         X, y = self.processed_data['X'], self.processed_data['y']
-        X_tr, X_te, y_tr, y_te = train_test_split(
-            X, y, test_size=test_size, random_state=42, stratify=y)
+        n_classes = len(np.unique(y))
+        n_samples = len(y)
+        # Ensure test set is large enough for stratification (at least n_classes samples)
+        effective_test_size = max(test_size, n_classes / n_samples)
+        if effective_test_size >= 1.0:
+            effective_test_size = test_size
+        try:
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X, y, test_size=effective_test_size, random_state=42, stratify=y)
+        except ValueError:
+            # Fallback: split without stratification when dataset is too small
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X, y, test_size=test_size, random_state=42, stratify=None)
         smote_strategy = self.processed_data.get('smote_strategy')
         if smote_strategy:
             X_tr, y_tr = self._apply_smote_to_train(X_tr, y_tr, smote_strategy)

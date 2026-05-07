@@ -996,7 +996,7 @@ def composition_analysis_tab():
         _taxonomic_level_selector("comp")
         settings = st.session_state.settings.copy()
 
-        top_n = st.slider("Number of taxa:", 5, 300, 20, 5, key="comp_top_n")
+        top_n = st.slider("Number of taxa:", 5, 1000, 20, 5, key="comp_top_n")
 
         st.markdown("#### Taxon Filters")
         min_abundance = st.number_input("Min mean abundance (%):", 0.0, 50.0, 0.0, 0.1, key="comp_min_ab")
@@ -1048,6 +1048,31 @@ def composition_analysis_tab():
                 analyzer.process_data()
                 st.session_state['comp_analyzer'] = analyzer
                 st.success("Done!")
+
+        # ── HTML report — always visible after analysis ───────────────────
+        if 'comp_analyzer' in st.session_state:
+            st.markdown("---")
+            st.markdown("#### Export")
+            min_ab_html = st.number_input(
+                "Min abundance filter (%):",
+                min_value=0.0, max_value=5.0, value=0.0, step=0.01,
+                format="%.2f",
+                key="sidebar_html_min_ab",
+                help="0 = show all taxa (like QIIME2). Increase to hide very rare taxa."
+            )
+            if st.button("Generate HTML report", key="sidebar_gen_html"):
+                with st.spinner("Building HTML report (all taxa)..."):
+                    _html = st.session_state['comp_analyzer'].generate_taxonomy_html_report(
+                        min_abundance=min_ab_html)
+                st.session_state['comp_html_report'] = _html
+            if 'comp_html_report' in st.session_state:
+                st.download_button(
+                    "Download HTML report",
+                    data=st.session_state['comp_html_report'],
+                    file_name="taxonomy_report.html",
+                    mime="text/html",
+                    key="sidebar_dl_html"
+                )
 
     with c2:
         if 'comp_analyzer' not in st.session_state:
@@ -1183,6 +1208,50 @@ def composition_analysis_tab():
             else:
                 st.warning("Group Heatmap requires a grouping variable")
 
+        # ── Full Taxonomy Table — always visible as expander ──────────────
+        st.markdown("---")
+        with st.expander("Full Taxonomy Table", expanded=False):
+            full_df = analyzer.create_full_taxonomy_table()
+            if full_df.empty:
+                st.warning("No taxonomy data available.")
+            else:
+                tax_levels = [c for c in ['Kingdom', 'Phylum', 'Class', 'Order',
+                                          'Family', 'Genus', 'Species']
+                              if c in full_df.columns]
+                ic1, ic2, ic3 = st.columns(3)
+                ic1.metric("Total features", f"{len(full_df):,}")
+                ic2.metric("Taxonomic levels", len(tax_levels))
+                ic3.metric("Levels", ', '.join(tax_levels))
+
+                st.markdown("---")
+                fc1, fc2, fc3 = st.columns(3)
+                search_text = fc1.text_input("Search taxon / lineage:", key="ft_search",
+                                             placeholder="e.g. Firmicutes")
+                min_ab_ft   = fc2.number_input("Min mean abundance (%):",
+                                               0.0, 100.0, 0.0, 0.1, key="ft_min_ab")
+                min_prev_ft = fc3.number_input("Min prevalence (%):",
+                                               0.0, 100.0, 0.0, 5.0, key="ft_min_prev")
+
+                filtered = full_df.copy()
+                if search_text.strip():
+                    mask = pd.Series(False, index=filtered.index)
+                    for col in tax_levels + ['Full Lineage', 'Feature ID']:
+                        if col in filtered.columns:
+                            mask |= (filtered[col].astype(str)
+                                     .str.contains(search_text.strip(),
+                                                   case=False, na=False))
+                    filtered = filtered[mask]
+                if min_ab_ft > 0:
+                    filtered = filtered[filtered['Mean Abundance (%)'] >= min_ab_ft]
+                if min_prev_ft > 0:
+                    filtered = filtered[filtered['Prevalence (%)'] >= min_prev_ft]
+
+                st.caption(f"Showing {len(filtered):,} of {len(full_df):,} features")
+                st.dataframe(filtered, use_container_width=True, height=500)
+                st.download_button("Download CSV", filtered.to_csv(index=False),
+                                   "full_taxonomy.csv", "text/csv",
+                                   key="ft_dl_csv")
+
         summary = analyzer.get_summary_statistics()
         if summary:
             st.markdown("---")
@@ -1219,7 +1288,7 @@ def heatmap_analysis_tab():
         _taxonomic_level_selector("heat")
         settings = st.session_state.settings.copy()
 
-        top_n = st.slider("Number of taxa:", 10, 300, 50, 10, key="heat_top_n")
+        top_n = st.slider("Number of taxa:", 10, 1000, 50, 10, key="heat_top_n")
 
         st.markdown("#### Colour Transform")
         color_transform = st.selectbox(
@@ -1353,7 +1422,7 @@ def enhanced_clustered_heatmap_tab():
         _taxonomic_level_selector("clust")
         settings = st.session_state.settings.copy()
 
-        top_n = st.slider("Number of top taxa", 10, 300, 50, key="clust_top_n")
+        top_n = st.slider("Number of top taxa", 10, 1000, 50, key="clust_top_n")
         algorithm = st.selectbox("Clustering algorithm", ['hierarchical', 'kmeans', 'dbscan'], key="clust_algo")
         linkage_method = st.selectbox("Linkage method", ['average', 'complete', 'single', 'ward'], key="clust_link")
         distance_metric = st.selectbox("Distance metric", ['euclidean', 'correlation', 'manhattan', 'cosine'],
