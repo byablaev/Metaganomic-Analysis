@@ -113,8 +113,29 @@ def show_welcome_screen():
 
     st.info("Smart Identification automatically detects orientation, column roles, and comparison groups.")
 
+def _load_demo_wang():
+    base = Path(__file__).parent / "data" / "wang"
+    paths = {
+        'otu_table': str(base / "otu_table.csv"),
+        'metadata':  str(base / "metadata.csv"),
+        'taxonomy':  str(base / "taxonomy.csv"),
+    }
+    loader = DataLoader()
+    success = loader.load_default_data(paths)
+    if success:
+        st.session_state.data_loader = loader
+        st.session_state.data_loaded = True
+        st.session_state.ml_analyzer = None
+        st.success("Demo dataset (Wang et al.) loaded!")
+        st.rerun()
+
 def data_section():
     st.subheader("Data Source")
+
+    if st.button("Load Demo Dataset (Wang et al.)", key="load_demo_wang"):
+        with st.spinner("Loading demo dataset..."):
+            _load_demo_wang()
+
     st.markdown("### Upload Your Files")
     st.caption("Any format accepted — orientation and column names detected automatically")
     otu_file      = st.file_uploader("OTU/ASV Table",   type=['csv','txt','tsv','biom'], key="otu_upload")
