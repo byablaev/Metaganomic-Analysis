@@ -1,0 +1,5 @@
+output/
+silva_cache/
+silva-138-99-seqs-515-806.qza
+__pycache__/
+*.pyc
