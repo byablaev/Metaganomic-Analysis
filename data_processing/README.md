@@ -58,6 +58,71 @@ output/exported/biomidas/metadata.csv   →  ../data/metadata.csv
 
 ---
 
+## Обработка датасета Wang et al. (SRA: PRJNA610525)
+
+Датасет: 63 образца почвенного микробиома, парное секвенирование 2×250 bp,  
+праймеры 515F/806R (регион V4), 3 группы лечения × 3 временные точки.
+
+### Шаг 1 — Скачать FASTQ из SRA
+
+```bash
+# Установить SRA Toolkit если нет: https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit
+# Скачать все 63 образца (SRR11573995–SRR11574057)
+
+for i in $(seq 11573995 11574057); do
+    fastq-dump --split-files --gzip SRR${i} --outdir fastq/
+done
+```
+
+На Windows скачать через браузер или использовать SRA Run Selector:
+1. Открыть https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA610525
+2. Выбрать все 63 образца → «Download» → «Accession List»
+3. Использовать `prefetch` + `fasterq-dump` из SRA Toolkit
+
+### Шаг 2 — Подготовить метаданные
+
+Скопировать готовый файл метаданных:
+```
+metadata_example_wang.csv  →  metadata.csv
+```
+
+Файл содержит 63 образца с колонками `SampleID`, `treatment`, `phase`:
+- `treatment`: Control / SingleMix / MultiMix
+- `phase`: TP1 / TP2 / TP3
+
+### Шаг 3 — Настроить маппинг SRR → имена образцов
+
+FASTQ-файлы называются по SRR-номерам (`SRR11573995_1.fastq.gz`),  
+а метаданные используют описательные имена (`PC1_1_A1`).  
+Файл `srr_to_sample_map.csv` содержит маппинг — передать его в манифест:
+
+```bash
+python3 01_create_manifest.py fastq/ \
+    --sample-map srr_to_sample_map.csv \
+    --output output/manifest.csv
+```
+
+При запуске через `run_pipeline.bat` маппинг применяется автоматически.
+
+**Обязательно проверьте маппинг** перед запуском:
+1. Открыть https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA610525
+2. Нажать «Metadata» → скачать `SraRunTable.txt`
+3. Сравнить столбцы `Run` и `Sample Name` с `srr_to_sample_map.csv`
+
+Если маппинг неверный — образцы окажутся перепутаны без предупреждения.
+
+### Шаг 4 — Запустить пайплайн
+
+Параметры для этого датасета уже настроены по умолчанию в `config.sh`:
+- Праймеры: 515F/806R
+- `TRUNC_LEN_F=250`, `TRUNC_LEN_R=200`
+
+```
+run_pipeline.bat → [1] Собрать образ + запустить
+```
+
+---
+
 ## Использование со своими данными
 
 ### FASTQ
