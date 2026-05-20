@@ -1,6 +1,6 @@
 # SRR accession to descriptive sample name mapping for Wang et al. dataset
 # Column 1: SRR accession (matches FASTQ filename prefix)
-# Column 2: sample_id (matches metadata_wang.csv SampleID column)
+# Column 2: sample_id (matches SampleID column in metadata.csv)
 #
 # Fill in the correct mapping from the SRA Run Table:
 #   https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA610525

@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: wang-16s-pipeline:latest
-    container_name: wang_16s_pipeline
+    image: qiime2-biomidas-pipeline:latest
+    container_name: qiime2_biomidas_pipeline
 
     volumes:
       - ./fastq:/data/fastq:ro       # положите FASTQ сюда
@@ -15,7 +15,7 @@ services:
       FASTQ_DIR: /data/fastq
       OUTPUT_DIR: /pipeline/output
       SILVA_CLASSIFIER: /pipeline/silva-138-99-seqs-515-806.qza
-      METADATA_FILE: /pipeline/metadata_wang.csv
+      METADATA_FILE: /pipeline/metadata.csv
       N_THREADS: "8"
       TRUNC_LEN_F: "250"
       TRUNC_LEN_R: "200"
