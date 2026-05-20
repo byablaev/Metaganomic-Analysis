@@ -1,73 +1,116 @@
 # data_processing — Обработка сырых данных 16S рРНК
 
-Эта папка содержит полный конвейер обработки сырых данных секвенирования для проекта [BiomidasMetaAnalysis](https://github.com/byablaev/BiomidasMetaAnalysis).
+Универсальный конвейер обработки парных FASTQ-файлов ампликонного секвенирования 16S рРНК.  
+Работает с **любым датасетом** (SRA, собственное секвенирование, публичные данные).
 
-**Вход:** парные FASTQ-файлы (SRA: SRR11573995–SRR11574057, датасет Wang et al.)  
-**Выход:** три CSV-файла, готовых к загрузке в BIOMIDAS (`otu_table.csv`, `taxonomy.csv`, `metadata.csv`)
-
----
-
-## Место этой папки в проекте
-
-```
-BiomidasMetaAnalysis/
-├── data_processing/       ← вы здесь (обработка сырых данных)
-│   ├── run_pipeline.bat
-│   ├── ...
-├── data/                  ← сюда скопировать результаты
-│   ├── otu_table.csv
-│   ├── taxonomy.csv
-│   └── metadata.csv
-├── main.py                ← BIOMIDAS (запускается после обработки)
-└── ...
-```
-
-Полный рабочий процесс:
-1. Запустить пайплайн в `data_processing/` → получить три CSV
-2. Скопировать CSV в папку `data/`
-3. Запустить BIOMIDAS (`Запустить_BIOMIDAS.bat` в корне репо)
+**Выход:** три CSV-файла для загрузки в [BIOMIDAS](https://github.com/byablaev/BiomidasMetaAnalysis):
+`otu_table.csv`, `taxonomy.csv`, `metadata.csv`
 
 ---
 
 ## Требования
 
 - **Docker Desktop** — https://www.docker.com/products/docker-desktop/
-- **16 ГБ RAM** (требуется для DADA2)
-- **~30 ГБ свободного места** (SILVA-классификатор + промежуточные файлы)
-- FASTQ-файлы в папке `E:\metagenomes\fastq`
+- **16 ГБ RAM** (требуется DADA2)
+- **~30 ГБ свободного места** на диске
 
-> QIIME2 не работает нативно на Windows. Docker решает эту проблему — устанавливать Linux или WSL не нужно.
+> QIIME2 не работает нативно на Windows. Docker решает эту проблему.
 
 ---
 
 ## Быстрый старт
 
-### 1. Установить Docker Desktop и запустить его
+### 1. Подготовить FASTQ-файлы
 
-### 2. Проверить FASTQ-файлы
-
-Убедитесь, что в `E:\metagenomes\fastq` находятся файлы вида:
+Скопировать парные FASTQ-файлы в папку `fastq/` рядом с этим README.  
+Файлы должны называться по одному из шаблонов:
 ```
-SRR11573995_1.fastq.gz   SRR11573995_2.fastq.gz
-SRR11573996_1.fastq.gz   SRR11573996_2.fastq.gz
-...
+<имя_образца>_1.fastq.gz  +  <имя_образца>_2.fastq.gz
+<имя_образца>_R1.fastq.gz +  <имя_образца>_R2.fastq.gz
 ```
-Всего должно быть 126 файлов (63 образца × 2).
 
-### 3. Запустить пайплайн
+### 2. Создать metadata.csv
+
+Создать файл `metadata.csv` в этой же папке (не в `fastq/`).  
+Первый столбец `SampleID` должен совпадать с именами файлов FASTQ (без `_1.fastq.gz`).
+
+```
+SampleID,group,timepoint
+Sample1,Control,T0
+Sample2,Control,T0
+Sample3,Treatment,T1
+```
+
+Шаблон: `metadata_example.csv`  
+Пример для датасета Wang et al.: `metadata_example_wang.csv`
+
+### 3. Запустить
 
 Дважды кликнуть **`run_pipeline.bat`** → выбрать `[1] Собрать образ + запустить`.
-
-При первом запуске Docker скачает QIIME2 (~5 ГБ) и SILVA-классификатор (~900 МБ) — это происходит один раз.  
-Время выполнения: **30–90 минут** в зависимости от CPU.
 
 ### 4. Скопировать результаты в BIOMIDAS
 
 ```
-data_processing/output/exported/biomidas/otu_table.csv  →  data/otu_table.csv
-data_processing/output/exported/biomidas/taxonomy.csv   →  data/taxonomy.csv
-data_processing/output/exported/biomidas/metadata.csv   →  data/metadata.csv
+output/exported/biomidas/otu_table.csv  →  ../data/otu_table.csv
+output/exported/biomidas/taxonomy.csv   →  ../data/taxonomy.csv
+output/exported/biomidas/metadata.csv   →  ../data/metadata.csv
 ```
+
+---
+
+## Использование со своими данными
+
+### FASTQ
+
+Пайплайн принимает любые парные FASTQ с Illumina:
+- Данные с вашего секвенатора
+- Данные из SRA (скачать через `fastq-dump --split-files <SRR>`)
+- Любые публичные датасеты
+
+Единственное требование — парные риды (_1/_2 или _R1/_R2).
+
+### Метаданные
+
+Создайте `metadata.csv`. Минимальный формат:
+```
+SampleID,group
+MySample1,Control
+MySample2,Treatment
+```
+Столбцов может быть сколько угодно (`timepoint`, `age`, `site` и т.д.).  
+`SampleID` должен **точно** совпадать с именем FASTQ-файла без суффикса `_1.fastq.gz`.
+
+### Праймеры
+
+Если ваш протокол использует другие праймеры — откройте `config.sh` и замените:
+```bash
+PRIMER_F="GTGYCAGCMGCCGCGGTAA"    # ← ваш форвард-праймер
+PRIMER_R="GGACTACNVGGGTWTCTAAT"   # ← ваш реверс-праймер
+```
+
+Часто используемые праймеры:
+
+| Регион | Форвард | Реверс |
+|--------|---------|--------|
+| V4 (EMP, **по умолчанию**) | `GTGYCAGCMGCCGCGGTAA` (515F) | `GGACTACNVGGGTWTCTAAT` (806R) |
+| V3-V4 | `CCTACGGGNGGCWGCAG` (341F) | `GACTACHVGGGTATCTAATCC` (806R) |
+| V1-V2 | `AGAGTTTGATCCTGGCTCAG` (8F) | `TGCTGCCTCCCGTAGGAGT` (338R) |
+| ITS1 (грибы) | `CTTGGTCATTTAGAGGAAGTAA` | `GCTGCGTTCTTCATCGATGC` |
+
+### Длины обрезки DADA2
+
+Запустите пайплайн — он выполнит шаги 0–1 и создаст `output/qzv/01_demux_summary.qzv`.  
+Откройте этот файл на https://view.qiime2.org.
+
+На графике качества найдите позицию, где медианное качество (оранжевая линия) падает ниже Q25.  
+Откройте `config.sh` и установите:
+```bash
+TRUNC_LEN_F=250   # ← позиция обрезки форвард-рида
+TRUNC_LEN_R=200   # ← позиция обрезки реверс-рида
+```
+Требование: `TRUNC_LEN_F + TRUNC_LEN_R ≥ длина ампликона + 20` (для V4: ≥ 273).
+
+Запустите снова — пайплайн продолжит с шага DADA2, пропустив уже выполненные.
 
 ---
 
@@ -75,15 +118,37 @@ data_processing/output/exported/biomidas/metadata.csv   →  data/metadata.csv
 
 | Файл | Назначение |
 |------|-----------|
-| `run_pipeline.bat` | Точка входа для Windows — запускать этот файл |
-| `config.sh` | Параметры пайплайна (праймеры, треды, пороги фильтрации) |
-| `01_create_manifest.py` | Составляет список FASTQ-файлов для QIIME2 |
+| `run_pipeline.bat` | Точка входа для Windows |
+| `config.sh` | Все параметры пайплайна |
+| `01_create_manifest.py` | Составляет манифест FASTQ для QIIME2 |
 | `02_pipeline.sh` | Основной конвейер QIIME2 |
-| `03_export_biomidas.py` | Конвертирует результаты QIIME2 в CSV для BIOMIDAS |
-| `Dockerfile` | Docker-образ с QIIME2 и скриптами пайплайна |
-| `metadata_wang.csv` | Метаданные 63 образцов Wang et al. |
-| `srr_to_sample_map.csv` | Соответствие SRR-номеров описательным именам образцов |
-| `environment.yml` | Conda-окружение (для запуска без Docker) |
+| `03_export_biomidas.py` | Конвертирует результаты в CSV для BIOMIDAS |
+| `Dockerfile` | Docker-образ на базе QIIME2 2024.10 |
+| `docker-compose.yml` | Альтернативный способ запуска |
+| `environment.yml` | Conda-окружение (для Linux/WSL без Docker) |
+| `metadata_example.csv` | Минимальный шаблон метаданных |
+| `metadata_example_wang.csv` | Метаданные датасета Wang et al. |
+| `srr_to_sample_map.csv` | Маппинг SRR → имена образцов Wang et al. |
+| `fastq/` | Сюда кладутся FASTQ-файлы |
+| `output/` | Сюда записываются все результаты |
+
+---
+
+## Структура вывода
+
+```
+output/
+├── qzv/                          # QIIME2 визуализации (открывать на view.qiime2.org)
+│   ├── 01_demux_summary.qzv      # качество ридов — смотреть для выбора TRUNC_LEN
+│   ├── 03_dada2_stats.qzv        # статистика денойзинга
+│   └── ...
+├── logs/                         # логи каждого шага
+└── exported/
+    └── biomidas/
+        ├── otu_table.csv         ← загружать в BIOMIDAS
+        ├── taxonomy.csv          ← загружать в BIOMIDAS
+        └── metadata.csv          ← загружать в BIOMIDAS
+```
 
 ---
 
@@ -91,72 +156,30 @@ data_processing/output/exported/biomidas/metadata.csv   →  data/metadata.csv
 
 | # | Инструмент | Что происходит |
 |---|-----------|----------------|
-| 0 | Python | Сканирует папку FASTQ, создаёт манифест для QIIME2 |
+| 0 | Python | Сканирует `fastq/`, создаёт манифест |
 | 1 | QIIME2 | Импортирует парные риды |
-| 2 | cutadapt | Удаляет праймеры (515F / 806R) |
-| 3 | DADA2 | Денойзинг → ASV, объединение парных ридов, удаление химер |
-| 4 | sklearn + SILVA 138 | Таксономическая классификация каждого ASV |
-| 5 | QIIME2 | Фильтрация: убирает ASV с < 10 ридов или < 2 образцов |
-| 6 | biom | Конвертация таблицы BIOM → TSV |
-| 7 | Python | Разбивает строку SILVA на столбцы Kingdom…Species, сохраняет CSV |
+| 2 | cutadapt | Удаляет праймеры |
+| 3 | DADA2 | Денойзинг → ASV, удаление химер |
+| 4 | sklearn + SILVA 138 | Таксономическая классификация |
+| 5 | QIIME2 | Фильтрация редких ASV |
+| 6 | biom | BIOM → TSV |
+| 7 | Python | TSV → CSV с колонками Kingdom…Species |
 
----
-
-## Настройка параметров (`config.sh`)
-
-### Длины обрезки DADA2
-
-```bash
-TRUNC_LEN_F=250   # форвард-рид
-TRUNC_LEN_R=200   # реверс-рид
-```
-
-После первого запуска откройте `output/qzv/01_demux_summary.qzv` на  
-https://view.qiime2.org и посмотрите графики качества.  
-Обрезайте там, где медиана качества падает ниже Q25.  
-Сумма `TRUNC_LEN_F + TRUNC_LEN_R` должна быть ≥ 273 (ампликон 515F/806R ≈ 253 нп + перекрытие 20 нп).
-
-### Праймеры
-
-```bash
-PRIMER_F="GTGYCAGCMGCCGCGGTAA"    # 515F
-PRIMER_R="GGACTACNVGGGTWTCTAAT"   # 806R
-```
-
-### Ресурсы
-
-```bash
-N_THREADS=8    # число потоков (рекомендуется: кол-во ядер CPU − 2)
-```
-
----
-
-## Проверка соответствия SRR → имя образца
-
-FASTQ-файлы названы по SRA-номерам (`SRR11573995`), а метаданные используют описательные имена (`PC1_1_A1`).  
-Файл `srr_to_sample_map.csv` содержит предполагаемое соответствие — его **необходимо проверить**:
-
-1. Открыть https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA610525
-2. Нажать «Metadata» → скачать `SraRunTable.txt`
-3. Сравнить столбцы `Run` и `Sample Name` с `srr_to_sample_map.csv`
-4. Исправить расхождения при необходимости
-
-Если маппинг неверный — образцы будут перепутаны без предупреждения.
+Шаги пропускаются автоматически если уже выполнены (при повторном запуске).
 
 ---
 
 ## Диагностика ошибок
 
 **"No sample IDs match"**  
-Имена образцов в манифесте не совпадают с метаданными. Проверьте `srr_to_sample_map.csv`.
+`SampleID` в `metadata.csv` не совпадают с именами FASTQ-файлов.  
+Имя файла `Sample1_1.fastq.gz` → SampleID должен быть `Sample1`.
 
 **"Too few reads passed the filter"**  
-Слишком агрессивная обрезка. Уменьшите `TRUNC_LEN_F` и `TRUNC_LEN_R` в `config.sh`.
+Уменьшите `TRUNC_LEN_F` и `TRUNC_LEN_R` в `config.sh`.
 
 **DADA2 работает несколько часов**  
-Нормально для 63 образцов. Увеличьте `N_THREADS` и объём RAM в Docker (Settings → Resources).
-
-Логи каждого шага — в папке `output/logs/`. Просмотр через пункт `[4] Логи` в `run_pipeline.bat`.
+Нормально для больших датасетов. Увеличьте `N_THREADS` и RAM в Docker (Settings → Resources).
 
 ---
 

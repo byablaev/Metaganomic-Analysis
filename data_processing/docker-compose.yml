@@ -1,0 +1,26 @@
+services:
+  qiime2-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wang-16s-pipeline:latest
+    container_name: wang_16s_pipeline
+
+    volumes:
+      - ./fastq:/data/fastq:ro       # положите FASTQ сюда
+      - ./output:/pipeline/output
+      - ./silva_cache:/pipeline/silva_cache
+
+    environment:
+      FASTQ_DIR: /data/fastq
+      OUTPUT_DIR: /pipeline/output
+      SILVA_CLASSIFIER: /pipeline/silva-138-99-seqs-515-806.qza
+      METADATA_FILE: /pipeline/metadata_wang.csv
+      N_THREADS: "8"
+      TRUNC_LEN_F: "250"
+      TRUNC_LEN_R: "200"
+      MIN_FREQUENCY: "10"
+      MIN_SAMPLES: "2"
+
+    mem_limit: 16g
+    restart: "no"
