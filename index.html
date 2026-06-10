@@ -786,117 +786,6 @@
     .mt-3 { margin-top: 1.5rem; }
     .mt-4 { margin-top: 2rem; }
 
-    /* ── GALLERY ─────────────────────────────────────────────── */
-    #gallery { background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-
-    .gal-browser {
-      margin-top: 2rem;
-      border: 1px solid var(--border-hi);
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(63,167,214,0.08);
-    }
-
-    .gal-chrome {
-      background: var(--bg-3);
-      border-bottom: 1px solid var(--border);
-      padding: 9px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .gal-url-bar {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 4px 10px;
-      font-family: var(--mono);
-      font-size: 10.5px;
-      color: var(--text-faint);
-    }
-
-    .gal-tabs-row {
-      display: flex;
-      background: var(--bg-3);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      padding: 0 0.8rem;
-      scrollbar-width: none;
-    }
-    .gal-tabs-row::-webkit-scrollbar { display: none; }
-
-    .gal-tab {
-      font-size: 11.5px;
-      padding: 9px 14px;
-      cursor: pointer;
-      border: none;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-      background: transparent;
-      font-family: var(--sans);
-      color: var(--text-faint);
-      transition: color 0.2s;
-    }
-    .gal-tab:hover { color: var(--text-dim); }
-    .gal-tab.gal-active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    .gal-panel { animation: galFadeIn 0.25s ease; }
-    @keyframes galFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-
-    .gal-ov-stats {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 1.2rem;
-    }
-    .gal-ov-cell { background: var(--bg-2); padding: 0.85rem 1rem; }
-    .gal-ov-lbl { font-size: 9.5px; color: var(--text-faint); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
-    .gal-ov-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--accent-hi); line-height: 1; }
-
-    .gal-chart-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-    .gal-chart-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem; }
-    .gal-chart-ttl { font-size: 11.5px; font-weight: 500; color: var(--text); margin-bottom: 0.5rem; }
-
-    .gal-intel-stats {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 1.4rem;
-    }
-    .gal-intel-cell { background: var(--bg-2); padding: 0.9rem; text-align: center; }
-    .gal-intel-val { font-family: var(--mono); font-size: 1.2rem; font-weight: 600; color: #d8eaf8; line-height: 1; margin-bottom: 3px; }
-    .gal-intel-lbl { font-size: 9.5px; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
-
-    .gal-meta-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .gal-meta-tbl th {
-      background: var(--bg-3); border: 1px solid var(--border); padding: 7px 10px;
-      text-align: left; font-family: var(--mono); font-size: 9.5px; color: var(--text-faint);
-      letter-spacing: 0.1em; text-transform: uppercase; font-weight: 400;
-    }
-    .gal-meta-tbl td { border: 1px solid var(--border); padding: 7px 10px; color: var(--text-dim); }
-    .gal-meta-tbl tr:hover td { background: rgba(255,255,255,0.02); }
-    .gal-chip {
-      font-family: var(--mono); font-size: 9.5px; padding: 2px 7px; border-radius: 3px;
-      background: rgba(63,167,214,0.1); border: 1px solid rgba(63,167,214,0.2); color: var(--accent);
-      white-space: nowrap;
-    }
-    .gal-cbar { height: 3px; border-radius: 2px; background: var(--border); margin-top: 4px; overflow: hidden; }
-    .gal-cfill { height: 100%; border-radius: 2px; background: var(--green); }
-
     @media (max-width: 768px) {
       nav { padding: 0 1.2rem; }
       .nav-links { display: none; }
@@ -904,9 +793,6 @@
       .val-grid { grid-template-columns: 1fr; }
       .datasets { grid-template-columns: 1fr; }
       .pipeline-grid { grid-template-columns: 1fr; }
-      .gal-ov-stats { grid-template-columns: repeat(3, 1fr); }
-      .gal-chart-grid { grid-template-columns: 1fr; }
-      .gal-intel-stats { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -918,7 +804,7 @@
   <ul class="nav-links">
     <li><a href="#about">О проекте</a></li>
     <li><a href="#pipeline">Конвейер</a></li>
-    <li><a href="#gallery">Иллюстрации</a></li>
+    <li><a href="#materials">Материалы</a></li>
     <li><a href="#validation">Валидация</a></li>
     <li><a href="#roadmap">Дорожная карта</a></li>
     <li><a href="#team">Команда</a></li>
@@ -1114,175 +1000,36 @@
   </div>
 </section>
 
-<!-- ── GALLERY ────────────────────────────────────────────────── -->
-<section id="gallery">
+<!-- ── MATERIALS ──────────────────────────────────────────────── -->
+<section id="materials" style="background:var(--bg); border-top:1px solid var(--border);">
   <div class="container">
     <p class="section-label">Иллюстративные материалы</p>
-    <h2>Интерфейс платформы — ключевые экраны</h2>
+    <h2>Скриншоты и примеры работы платформы</h2>
     <p class="section-lead">
-      Реальные экраны аналитических модулей BIOMIDAS на публичном датасете
-      Wang&nbsp;et&nbsp;al.&nbsp;(2020) — 63 образца, 30&thinsp;661 OTU, NCBI&nbsp;PRJNA626000.
+      Папка на Яндекс Диске содержит скриншоты всех аналитических модулей
+      BIOMIDAS, примеры отчётов и визуализаций на реальных датасетах.
     </p>
 
-    <div class="gal-browser">
-      <!-- browser chrome -->
-      <div class="gal-chrome">
-        <div style="display:flex;gap:6px;">
-          <span class="dot dot-r"></span>
-          <span class="dot dot-y"></span>
-          <span class="dot dot-g"></span>
-        </div>
-        <div class="gal-url-bar">localhost:8501 &nbsp;·&nbsp; BioMidas16s — Professional metagenomic data analysis toolkit</div>
-      </div>
-
-      <!-- platform header bar -->
-      <div style="background:var(--bg-3);padding:0.9rem 1.4rem;border-bottom:1px solid var(--border);">
-        <p style="font-family:var(--mono);font-size:1rem;font-weight:600;color:#e8f4ff;line-height:1;margin-bottom:2px;">BioMidas16s</p>
-        <p style="font-size:11px;color:var(--text-faint);">Professional metagenomic data analysis toolkit | Developer: Ablaev Aziz Yakubovich</p>
-      </div>
-
-      <!-- module tab row -->
-      <div class="gal-tabs-row">
-        <button class="gal-tab" data-gpanel="ds-intel" onclick="galSwitch('ds-intel')">Dataset Intelligence</button>
-        <button class="gal-tab gal-active" data-gpanel="overview" onclick="galSwitch('overview')">Overview</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Alpha Diversity</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Beta Diversity</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Composition</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Heatmap</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Clustered Heatmap</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Machine Learning</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Network Analysis</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Report</button>
-        <button class="gal-tab" style="cursor:default;opacity:.5;">Export Results</button>
-      </div>
-
-      <!-- panel content -->
-      <div style="background:var(--bg);padding:1.4rem;">
-
-        <!-- ── OVERVIEW PANEL ── -->
-        <div class="gal-panel" id="gpanel-overview">
-          <h3 style="font-size:1.1rem;color:#d8eaf8;margin-bottom:1rem;font-weight:500;">Data Overview</h3>
-
-          <div class="gal-ov-stats">
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Samples</div>
-              <div class="gal-ov-val">63</div>
-            </div>
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Active OTUs</div>
-              <div class="gal-ov-val">30,661</div>
-            </div>
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Total Reads</div>
-              <div class="gal-ov-val" style="font-size:0.85rem;">5,210,149</div>
-            </div>
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Mean Reads/Sample</div>
-              <div class="gal-ov-val" style="font-size:0.85rem;">82,701</div>
-            </div>
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Median Reads/Sample</div>
-              <div class="gal-ov-val" style="font-size:0.85rem;">76,883</div>
-            </div>
-            <div class="gal-ov-cell">
-              <div class="gal-ov-lbl">Sparsity ⓘ</div>
-              <div class="gal-ov-val">92.8%</div>
-            </div>
-          </div>
-
-          <div class="gal-chart-grid">
-            <div class="gal-chart-box">
-              <p class="gal-chart-ttl">Reads per Sample Distribution</p>
-              <canvas id="gal-hist" style="width:100%;display:block;"></canvas>
-            </div>
-            <div class="gal-chart-box">
-              <p class="gal-chart-ttl">Reads per Sample — Box/Violin</p>
-              <canvas id="gal-violin" style="width:100%;display:block;"></canvas>
-            </div>
-            <div class="gal-chart-box">
-              <p class="gal-chart-ttl">OTU Prevalence Distribution</p>
-              <canvas id="gal-prev" style="width:100%;display:block;"></canvas>
-            </div>
-            <div class="gal-chart-box">
-              <p class="gal-chart-ttl">Cumulative Reads (Sample Rarefaction Preview)</p>
-              <canvas id="gal-raref" style="width:100%;display:block;"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── DATASET INTELLIGENCE PANEL ── -->
-        <div class="gal-panel" id="gpanel-ds-intel" style="display:none;">
-          <h3 style="font-size:1.1rem;color:#d8eaf8;margin-bottom:0.4rem;font-weight:500;">Dataset Intelligence</h3>
-          <p style="font-size:12px;color:var(--text-dim);margin-bottom:1rem;">Automatic analysis of your dataset — format, orientation, metadata roles, and comparison recommendations.</p>
-
-          <div style="background:rgba(82,214,138,0.07);border:1px solid rgba(82,214,138,0.25);border-radius:var(--radius);padding:0.65rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
-            <span style="font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:3px;background:rgba(82,214,138,0.12);border:1px solid rgba(82,214,138,0.3);color:var(--green);">16S Amplicon</span>
-            <span style="font-size:12px;color:var(--text-dim);">Confidence:</span>
-            <span style="font-family:var(--mono);font-size:13px;color:var(--green);font-weight:600;">85%</span>
-          </div>
-
-          <div class="gal-intel-stats">
-            <div class="gal-intel-cell"><div class="gal-intel-val">63</div><div class="gal-intel-lbl">Samples</div></div>
-            <div class="gal-intel-cell"><div class="gal-intel-val">30,661</div><div class="gal-intel-lbl">Features</div></div>
-            <div class="gal-intel-cell"><div class="gal-intel-val" style="font-size:0.9rem;">5,210,149</div><div class="gal-intel-lbl">Reads</div></div>
-            <div class="gal-intel-cell"><div class="gal-intel-val">93%</div><div class="gal-intel-lbl">Sparsity</div></div>
-            <div class="gal-intel-cell"><div class="gal-intel-val">100%</div><div class="gal-intel-lbl">OTU-Tax</div></div>
-          </div>
-
-          <h4 style="font-size:12px;color:var(--text);margin-bottom:0.7rem;font-weight:500;">Metadata Column Roles</h4>
-          <table class="gal-meta-tbl">
-            <thead>
-              <tr>
-                <th>Column</th>
-                <th>Detected Role</th>
-                <th>Unique Values</th>
-                <th>Completeness</th>
-                <th>Sample Values</th>
-                <th>Use For</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="color:var(--text);font-weight:500;">treatment</td>
-                <td><span class="gal-chip">Grouping</span></td>
-                <td>3</td>
-                <td>100%<div class="gal-cbar"><div class="gal-cfill" style="width:100%"></div></div></td>
-                <td style="font-family:var(--mono);font-size:10.5px;color:var(--text-faint);">SingleMix, Control, MultiMix</td>
-                <td><span class="gal-chip">Grouping</span></td>
-              </tr>
-              <tr>
-                <td style="color:var(--text);font-weight:500;">phase</td>
-                <td><span class="gal-chip">Grouping</span></td>
-                <td>3</td>
-                <td>100%<div class="gal-cbar"><div class="gal-cfill" style="width:100%"></div></div></td>
-                <td style="font-family:var(--mono);font-size:10.5px;color:var(--text-faint);">TP2, TP3, TP1</td>
-                <td><span class="gal-chip">Grouping</span></td>
-              </tr>
-              <tr>
-                <td style="color:var(--text);font-weight:500;">replicate</td>
-                <td><span class="gal-chip" style="background:rgba(232,184,75,0.1);border-color:rgba(232,184,75,0.25);color:var(--amber);">Date/Time</span></td>
-                <td>0</td>
-                <td style="color:var(--text-faint);">nan%<div class="gal-cbar"></div></td>
-                <td style="font-family:var(--mono);font-size:10.5px;color:var(--text-faint);">nan%</td>
-                <td style="color:var(--text-faint);">—</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div style="margin-top:1.2rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem 1rem;">
-            <p style="font-size:11.5px;color:var(--text-dim);line-height:1.7;">
-              <span style="color:var(--accent);font-family:var(--mono);font-size:10px;">ⓘ</span>&nbsp;
-              OTU orientation: OTUs×rows, Samples×columns (transposed automatically) · Sample match: 100% · Taxonomy format: standard
-            </p>
-          </div>
-        </div>
-
-      </div>
+    <div style="margin-top:2rem; display:inline-flex; flex-direction:column; gap:1rem; align-items:flex-start;">
+      <a href="https://disk.yandex.ru/d/EkN9Vc0b8uNPvQ" target="_blank" rel="noopener"
+         style="display:inline-flex; align-items:center; gap:12px;
+                background:var(--accent); color:#fff;
+                font-family:var(--mono); font-size:14px; font-weight:600;
+                padding:14px 28px; border-radius:var(--radius);
+                text-decoration:none;
+                box-shadow:0 4px 24px rgba(63,167,214,0.35);
+                transition:background 0.2s, box-shadow 0.2s;"
+         onmouseover="this.style.background='var(--accent-hi)';this.style.boxShadow='0 6px 32px rgba(63,167,214,0.5)'"
+         onmouseout="this.style.background='var(--accent)';this.style.boxShadow='0 4px 24px rgba(63,167,214,0.35)'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        Открыть папку с материалами
+      </a>
+      <span style="font-family:var(--mono); font-size:11px; color:var(--text-faint);">
+        disk.yandex.ru · Яндекс Диск · открывается в новой вкладке
+      </span>
     </div>
-
-    <p style="text-align:center;margin-top:0.8rem;font-family:var(--mono);font-size:10px;color:var(--text-faint);letter-spacing:0.07em;">
-      Датасет: Wang et al. (2020) · NCBI&nbsp;PRJNA626000 · 63 образца · 30&thinsp;661 OTU &nbsp;·&nbsp; localhost:8501 · Streamlit · Python 3.8+
-    </p>
   </div>
 </section>
 
@@ -2255,285 +2002,6 @@
     });
 
     draw();
-  })();
-
-  /* ══════════════════════════════════════════════════════
-     GALLERY — Tab switching & Canvas charts
-  ══════════════════════════════════════════════════════ */
-  (function () {
-
-    window.galSwitch = function (panelId) {
-      document.querySelectorAll('.gal-panel').forEach(p => { p.style.display = 'none'; });
-      document.querySelectorAll('.gal-tab[data-gpanel]').forEach(t => {
-        t.classList.remove('gal-active');
-      });
-      const panel = document.getElementById('gpanel-' + panelId);
-      if (panel) panel.style.display = 'block';
-      const tab = document.querySelector('.gal-tab[data-gpanel="' + panelId + '"]');
-      if (tab) tab.classList.add('gal-active');
-      if (panelId === 'overview') drawGalCharts();
-    };
-
-    /* ── Histogram: Reads per Sample ─────────────────────── */
-    function drawGalHist() {
-      const c = document.getElementById('gal-hist');
-      if (!c) return;
-      const W = c.width = c.offsetWidth || 320;
-      const H = c.height = 148;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, W, H);
-
-      const bins   = [2, 5, 12, 14, 9, 7, 5, 3, 2, 1, 2, 1];
-      const maxB   = 14;
-      const PAD    = { l: 30, r: 14, t: 14, b: 30 };
-      const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
-      const bStep  = cW / bins.length;
-
-      ctx.strokeStyle = '#1c2d40'; ctx.lineWidth = 0.5;
-      [0.5, 1].forEach(f => {
-        const y = PAD.t + cH * (1 - f);
-        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
-      });
-
-      bins.forEach((cnt, i) => {
-        const bH = (cnt / maxB) * cH;
-        const x = PAD.l + i * bStep + 2;
-        const y = PAD.t + cH - bH;
-        const g = ctx.createLinearGradient(x, y, x, y + bH);
-        g.addColorStop(0, 'rgba(63,167,214,0.92)');
-        g.addColorStop(1, 'rgba(63,167,214,0.52)');
-        ctx.fillStyle = g;
-        ctx.fillRect(x, y, bStep - 4, bH);
-      });
-
-      const meanX = PAD.l + (82700 / 25000) * bStep;
-      ctx.strokeStyle = '#e8b84b'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.moveTo(meanX, PAD.t + 2); ctx.lineTo(meanX, H - PAD.b); ctx.stroke();
-
-      const medX  = PAD.l + (76900 / 25000) * bStep;
-      ctx.strokeStyle = '#52d68a'; ctx.setLineDash([2, 4]);
-      ctx.beginPath(); ctx.moveTo(medX, PAD.t + 2); ctx.lineTo(medX, H - PAD.b); ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.strokeStyle = '#2a4060'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, H - PAD.b);
-      ctx.lineTo(W - PAD.r, H - PAD.b); ctx.stroke();
-
-      ctx.fillStyle = '#354a60'; ctx.font = '8px Consolas,monospace';
-      ctx.textAlign = 'center';
-      ['0', '50k', '100k', '150k', '200k', '250k+'].forEach((lbl, i) => {
-        ctx.fillText(lbl, PAD.l + i * 2 * bStep, H - PAD.b + 10);
-      });
-      ctx.textAlign = 'right';
-      ctx.fillText(maxB, PAD.l - 3, PAD.t + 4);
-      ctx.fillText('0', PAD.l - 3, H - PAD.b + 4);
-
-      ctx.font = '7.5px Consolas,monospace'; ctx.textAlign = 'left';
-      ctx.fillStyle = '#e8b84b'; ctx.fillText('— mean 82.7k', W - 78, PAD.t + 12);
-      ctx.fillStyle = '#52d68a'; ctx.fillText('-- median 76.9k', W - 78, PAD.t + 22);
-    }
-
-    /* ── Box/Violin: Reads by Treatment ──────────────────── */
-    function drawGalViolin() {
-      const c = document.getElementById('gal-violin');
-      if (!c) return;
-      const W = c.width = c.offsetWidth || 320;
-      const H = c.height = 148;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, W, H);
-
-      const groups = [
-        { name: 'Control',   color: '#e87d4b', med: 78000, q1: 55000, q3: 100000, min: 28000, max: 195000 },
-        { name: 'MultiMix',  color: '#3fa7d6', med: 74000, q1: 52000, q3:  96000, min: 22000, max: 205000 },
-        { name: 'SingleMix', color: '#52d68a', med: 80000, q1: 60000, q3: 104000, min: 30000, max: 188000 },
-      ];
-      const PAD  = { l: 14, r: 14, t: 14, b: 24 };
-      const cH   = H - PAD.t - PAD.b;
-      const minV = 0, maxV = 330000;
-      const toY  = v => PAD.t + cH * (1 - (v - minV) / (maxV - minV));
-      const gW   = (W - PAD.l - PAD.r) / groups.length;
-
-      ctx.strokeStyle = '#1c2d40'; ctx.lineWidth = 0.5;
-      [100000, 200000, 300000].forEach(v => {
-        const y = toY(v);
-        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
-      });
-
-      groups.forEach((g, i) => {
-        const cx   = PAD.l + (i + 0.5) * gW;
-        const hvW  = gW * 0.26;
-        const pts  = [
-          { v: g.min, w: 0.06 }, { v: g.q1, w: 0.58 }, { v: g.med, w: 0.9 },
-          { v: g.q3, w: 0.62 }, { v: g.max, w: 0.08 },
-        ];
-        ctx.beginPath();
-        pts.forEach((p, pi) => {
-          const y = toY(p.v), x = cx + p.w * hvW;
-          pi === 0 ? ctx.moveTo(cx, y) : ctx.lineTo(x, y);
-        });
-        for (let pi = pts.length - 1; pi >= 0; pi--) {
-          const p = pts[pi];
-          ctx.lineTo(cx - p.w * hvW, toY(p.v));
-        }
-        ctx.closePath();
-        ctx.fillStyle   = g.color + '2e'; ctx.fill();
-        ctx.strokeStyle = g.color + 'aa'; ctx.lineWidth = 1.5; ctx.stroke();
-
-        const y1 = toY(g.q3), y2 = toY(g.q1), bw = hvW * 0.46;
-        ctx.fillStyle   = g.color + '44';
-        ctx.fillRect(cx - bw, y1, bw * 2, y2 - y1);
-        ctx.strokeStyle = g.color; ctx.lineWidth = 1;
-        ctx.strokeRect(cx - bw, y1, bw * 2, y2 - y1);
-
-        const medY = toY(g.med);
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(cx - bw, medY); ctx.lineTo(cx + bw, medY); ctx.stroke();
-
-        ctx.strokeStyle = g.color + '99'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, toY(g.max)); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx, y2); ctx.lineTo(cx, toY(g.min)); ctx.stroke();
-
-        ctx.fillStyle = g.color; ctx.font = '9px Consolas,monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(g.name, cx, H - 5);
-      });
-
-      ctx.fillStyle = '#354a60'; ctx.font = '8px Consolas,monospace'; ctx.textAlign = 'right';
-      ctx.fillText('300k', PAD.l + 30, toY(300000) + 3);
-      ctx.fillText('100k', PAD.l + 30, toY(100000) + 3);
-    }
-
-    /* ── OTU Prevalence Distribution ─────────────────────── */
-    function drawGalPrev() {
-      const c = document.getElementById('gal-prev');
-      if (!c) return;
-      const W = c.width = c.offsetWidth || 320;
-      const H = c.height = 148;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, W, H);
-
-      const bins = [20800, 4100, 1950, 1080, 680, 440, 310, 230, 175, 120, 95, 80, 62, 50, 38, 30, 22, 18, 12, 9];
-      const maxB = bins[0];
-      const PAD  = { l: 38, r: 12, t: 14, b: 28 };
-      const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
-      const bStep = cW / bins.length;
-
-      ctx.strokeStyle = '#1c2d40'; ctx.lineWidth = 0.5;
-      [0.25, 0.5, 0.75, 1].forEach(f => {
-        const y = PAD.t + cH * (1 - f);
-        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
-      });
-
-      bins.forEach((cnt, i) => {
-        const bH = (cnt / maxB) * cH;
-        const x  = PAD.l + i * bStep + 1;
-        const y  = PAD.t + cH - bH;
-        const g  = ctx.createLinearGradient(x, y, x, y + bH);
-        g.addColorStop(0, 'rgba(82,214,138,0.9)');
-        g.addColorStop(1, 'rgba(82,214,138,0.42)');
-        ctx.fillStyle = g;
-        ctx.fillRect(x, y, bStep - 2, bH);
-      });
-
-      ctx.strokeStyle = '#2a4060'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, H - PAD.b);
-      ctx.lineTo(W - PAD.r, H - PAD.b); ctx.stroke();
-
-      ctx.fillStyle = '#354a60'; ctx.font = '8px Consolas,monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText('21k', PAD.l - 3, PAD.t + 4);
-      ctx.fillText('10k', PAD.l - 3, PAD.t + cH * (1 - 10000 / maxB) + 4);
-      ctx.fillText('0',   PAD.l - 3, H - PAD.b + 4);
-      ctx.textAlign = 'center';
-      ['0%', '25%', '50%', '75%', '100%'].forEach((lbl, i) => {
-        ctx.fillText(lbl, PAD.l + (i / 4) * cW, H - PAD.b + 10);
-      });
-      ctx.fillStyle = '#354a60'; ctx.font = '7.5px Consolas,monospace'; ctx.textAlign = 'left';
-      ctx.fillText('# OTUs', 1, PAD.t + 8);
-    }
-
-    /* ── Sample Rarefaction Curve ────────────────────────── */
-    function drawGalRaref() {
-      const c = document.getElementById('gal-raref');
-      if (!c) return;
-      const W = c.width = c.offsetWidth || 320;
-      const H = c.height = 148;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, W, H);
-
-      const depths = [
-        22000,28000,33000,37000,40000,42000,44000,46000,48000,50000,
-        52000,54000,56000,58000,60000,62000,63000,64000,66000,68000,
-        70000,71000,72000,73000,74000,75000,76000,77000,78000,79000,
-        80000,81000,82000,83000,84000,85000,86000,87000,88000,90000,
-        92000,94000,96000,98000,100000,102000,105000,108000,112000,116000,
-        120000,125000,130000,140000,150000,160000,175000,190000,210000,240000,
-        280000,310000,325000
-      ];
-      const cumReads = []; let sum = 0;
-      depths.forEach(d => { sum += d; cumReads.push(sum); });
-      const total = sum;
-
-      const PAD  = { l: 38, r: 12, t: 14, b: 28 };
-      const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
-      const n   = depths.length;
-      const toX = i => PAD.l + (i / (n - 1)) * cW;
-      const toY = v => PAD.t + cH * (1 - v / total);
-
-      ctx.strokeStyle = '#1c2d40'; ctx.lineWidth = 0.5;
-      [0.25, 0.5, 0.75, 1].forEach(f => {
-        const y = PAD.t + cH * (1 - f);
-        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
-      });
-
-      ctx.beginPath();
-      ctx.moveTo(toX(0), H - PAD.b);
-      cumReads.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
-      ctx.lineTo(toX(n - 1), H - PAD.b);
-      ctx.closePath();
-      const aGrad = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
-      aGrad.addColorStop(0, 'rgba(91,200,245,0.42)');
-      aGrad.addColorStop(1, 'rgba(91,200,245,0.04)');
-      ctx.fillStyle = aGrad; ctx.fill();
-
-      ctx.beginPath();
-      cumReads.forEach((v, i) => {
-        i === 0 ? ctx.moveTo(toX(0), toY(v)) : ctx.lineTo(toX(i), toY(v));
-      });
-      ctx.strokeStyle = '#5bc8f5'; ctx.lineWidth = 2; ctx.stroke();
-
-      ctx.strokeStyle = '#2a4060'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, H - PAD.b);
-      ctx.lineTo(W - PAD.r, H - PAD.b); ctx.stroke();
-
-      ctx.fillStyle = '#354a60'; ctx.font = '8px Consolas,monospace';
-      ctx.textAlign = 'right';
-      ['5.2M', '3.9M', '2.6M', '1.3M', '0'].forEach((lbl, i) => {
-        ctx.fillText(lbl, PAD.l - 3, PAD.t + i * cH / 4 + 4);
-      });
-      ctx.textAlign = 'center';
-      [0, 16, 32, 47, 63].forEach(v => {
-        ctx.fillText(v, toX(Math.min(v, n - 1)), H - PAD.b + 10);
-      });
-      ctx.fillStyle = '#354a60'; ctx.font = '7.5px Consolas,monospace'; ctx.textAlign = 'left';
-      ctx.fillText('Reads', 1, PAD.t + 8);
-    }
-
-    function drawGalCharts() {
-      requestAnimationFrame(() => {
-        drawGalHist();
-        drawGalViolin();
-        drawGalPrev();
-        drawGalRaref();
-      });
-    }
-
-    window.addEventListener('load', drawGalCharts);
-    window.addEventListener('resize', drawGalCharts);
-
   })();
 </script>
 </body>
